@@ -86,10 +86,41 @@ class App:
     def __init__(self):
             # Set up the screen, the title, and the size.
             self.root = Tk()
-            self.root.title("Basic Notepad")
-            self.root.minsize(width=500,height=400)
+            self.root.title("Transcription Tools")
+            self.root.minsize(width=500,height=800)
 
-                    
+            # Set up Buttons Frame
+            self.bFrame = Frame(self.root)
+            self.bFrame.grid(row=0, column=1, sticky=S)
+            self.bFrame.pack()
+
+            # Set up the audio buttons
+            B1 = Button(self.bFrame, text="Pause", command=lambda:self.pauseAudio(None))
+            B2 = Button(self.bFrame, text="Forward", command=lambda:self.forwardAudio(None))
+            B3 = Button(self.bFrame, text="Backward", command=lambda:self.backwardAudio(None))
+            B4 = Button(self.bFrame, text="Speed Up", command=lambda:self.speedUpAudio(None))
+            B5 = Button(self.bFrame, text="Slow Down", command=lambda:self.slowDownAudio(None))
+            B6 = Button(self.bFrame, text="Time Stamp", command=lambda:self.timestamps(None))
+            B1.pack(side=LEFT); B2.pack(side=LEFT); B3.pack(side=LEFT); B4.pack(side=LEFT); B5.pack(side=LEFT); B6.pack(side=LEFT);
+
+            # Set up Text Tool Frame
+            self.textFrame = Frame(self.root)
+            self.textFrame.pack(expand=YES, fill=BOTH)
+
+            # Set up the text widget
+            self.text = Text(self.textFrame)
+            self.text.bind('<Control-t>', self.timestamps)
+            self.text.bind('<Control-p>', self.pauseAudio)
+            self.text.bind('<Control-equal>', self.speedUpAudio)
+            self.text.bind('<Control-minus>', self.slowDownAudio)
+            self.text.bind('<Control-Right>', self.forwardAudio)
+            self.text.bind('<Control-Left>', self.backwardAudio)
+            scroll = Scrollbar(self.textFrame, orient=VERTICAL)
+            scroll.config (command=self.text.yview)
+            scroll.pack(side=RIGHT, fill=Y)
+            self.text.config(yscrollcommand=scroll.set)
+            self.text.pack(expand=YES, fill=BOTH) # Expand to fit vertically and horizontally
+
             # Set up basic Menu
             menubar = Menu(self.root)
     
@@ -111,10 +142,10 @@ class App:
             AudioMenu.add_command(label="Play", command=self.playAudio)
             AudioMenu.add_command(label="Stop", command=self.stopAudio)
             AudioMenu.add_command(label="Pause", command=lambda:self.pauseAudio(None), accelerator="Ctrl+P")
-            AudioMenu.add_command(label="Speed +", command=lambda:self.speedUpAudio(None), accelerator="Crtl +/=")
-            AudioMenu.add_command(label="Speed -", command=lambda:self.slowDownAudio(None), accelerator="Ctrl -")
-            AudioMenu.add_command(label="Go Forward", command=lambda:self.forwardAudio(None), accelerator="Ctrl ->")
-            AudioMenu.add_command(label="Go Backward", command=lambda:self.backwardAudio(None), accelerator="Ctrl <-")
+            AudioMenu.add_command(label="Speed +", command=lambda:self.speedUpAudio(None), accelerator="Ctrl+=")
+            AudioMenu.add_command(label="Speed -", command=lambda:self.slowDownAudio(None), accelerator="Ctrl+-")
+            AudioMenu.add_command(label="Go Forward", command=lambda:self.forwardAudio(None), accelerator="Ctrl+Right")
+            AudioMenu.add_command(label="Go Backward", command=lambda:self.backwardAudio(None), accelerator="Ctrl+Left")
             menubar.add_cascade(label="Audio", menu=AudioMenu)
 
             #Set up Transcription Menu
@@ -124,15 +155,6 @@ class App:
             TranscriptMenu.add_command(label='Insert Audio Metadata')
             menubar.add_cascade(label="Transcription Tools", menu=TranscriptMenu)
 
-            # Set up the text widget
-            self.text = Text(self.root)
-            self.text.bind('<Control-t>', self.timestamps)
-            self.text.bind('<Control-p>', self.pauseAudio)
-            self.text.bind('<Control-equal>', self.speedUpAudio)
-            self.text.bind('<Control-minus>', self.slowDownAudio)
-            self.text.bind('<Control-Right>', self.forwardAudio)
-            self.text.bind('<Control-Left>', self.backwardAudio)
-            self.text.pack(expand=YES, fill=BOTH) # Expand to fit vertically and horizontally
 
 
 app = App()

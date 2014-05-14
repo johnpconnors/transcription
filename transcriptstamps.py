@@ -85,7 +85,7 @@ class App:
         t=str(tsec)
         stamp=' ('+t+') '
         self.text.insert(END, stamp)
-        print(t)
+
     def timecheck(self):
         tmillisec=vlc.libvlc_media_player_get_time(self.p)
         sec=tmillisec/1000
@@ -109,6 +109,19 @@ class App:
             self.timecheck()
             self.clock.config(text=self.stamp)
         self.clock.after(200, self.displayTime)
+    #Functions for th custom text inserts
+    def customButton1(self, event):
+        c1text=self.CE0.get()
+        self.text.insert(END, c1text)
+    def customButton2(self, event):
+        c2text=self.CE1.get()
+        self.text.insert(END, c2text)
+    def customButton3(self, event):
+        c3text=self.CE2.get()
+        self.text.insert(END, c3text)
+    def customButton4(self, event):
+        c4text=self.CE3.get()
+        self.text.insert(END, c4text)
 
     def __init__(self):
             # Set up the screen, the title, and the size.
@@ -146,6 +159,25 @@ class App:
             B6 = Button(self.bFrame, text="Time Stamp", command=lambda:self.timestamps(None))
             B0.pack(side=LEFT);B1.pack(side=LEFT); B2.pack(side=LEFT); B3.pack(side=LEFT); B4.pack(side=LEFT); B5.pack(side=LEFT); B6.pack(side=LEFT);
 
+            # Set Up Custom Insert Shortcuts Frame
+            self.customFrame = Frame(self.root)
+            self.customFrame.grid(row=1, column=1)
+            self.customFrame.pack()
+
+            CB0 = Button(self.customFrame, text="Ctrl+1", command=lambda:self.customButton1(None))
+            inserttext0 = StringVar()
+            self.CE0 = Entry(self.customFrame, textvariable=inserttext0, width=10)
+            CB1 = Button(self.customFrame, text="Ctrl+2", command=lambda:self.customButton2(None))
+            inserttext1 = StringVar()
+            self.CE1 = Entry(self.customFrame, textvariable=inserttext1, width=10)
+            CB2 = Button(self.customFrame, text="Ctrl+3", command=lambda:self.customButton3(None))
+            inserttext2 = StringVar()
+            self.CE2 = Entry(self.customFrame, textvariable=inserttext2, width=10)
+            CB3 = Button(self.customFrame, text="Ctrl+4", command=lambda:self.customButton4(None))
+            inserttext3 = StringVar()
+            self.CE3 = Entry(self.customFrame, textvariable=inserttext3, width=10)
+            CB0.pack(side=LEFT);self.CE0.pack(side=LEFT);CB1.pack(side=LEFT);self.CE1.pack(side=LEFT);CB2.pack(side=LEFT);self.CE2.pack(side=LEFT);CB3.pack(side=LEFT);self.CE3.pack(side=LEFT)
+
             # Set up Text Tool Frame
             self.textFrame = Frame(self.root)
             self.textFrame.pack(expand=YES, fill=BOTH)
@@ -158,6 +190,10 @@ class App:
             self.text.bind('<Control-minus>', self.slowDownAudio)
             self.text.bind('<Control-Right>', self.forwardAudio)
             self.text.bind('<Control-Left>', self.backwardAudio)
+            self.text.bind('<Control-Key-1>', self.customButton1)
+            self.text.bind('<Control-Key-2>', self.customButton2)
+            self.text.bind('<Control-Key-3>', self.customButton3)
+            self.text.bind('<Control-Key-4>', self.customButton4)
             scroll = Scrollbar(self.textFrame, orient=VERTICAL)
             scroll.config (command=self.text.yview)
             scroll.pack(side=RIGHT, fill=Y)

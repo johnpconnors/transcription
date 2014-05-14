@@ -1,4 +1,7 @@
-# http://my-python3-code.blogspot.com/2012/08/basic-tkinter-text-editor-online-example.html
+# This basic GUI text editor is intended to aid researchers that must transcribe or take notes from audio files.
+# The audio tools utilize the VLC bindings for Python. 
+# The code is maintained and branchable here: https://github.com/johnpconnors/transcription
+# The initial design of the text editor was inspired by and borrowed form this code: http://my-python3-code.blogspot.com/2012/08/basic-tkinter-text-editor-online-example.html
 
 import tkFileDialog
 from Tkinter import *
@@ -10,33 +13,44 @@ import threading
 class App:
 
     def doNew(self):
-            # Clear the text
-            self.text.delete(0.0, END)
+        # Clear the text
+        self.text.delete(0.0, END)
 
     def doSaveAs(self):
-            # Returns the saved file
-            file = Tkinter.filedialog.asksaveasfile(mode='w')
+        # Returns the saved file
+        file = tkFileDialog.asksaveasfile(mode='w')
+        self.savefile = file
+        textoutput = self.text.get(0.0, END) # Gets all the text in the field
+        file.write(textoutput.rstrip()) # With blank perameters, this cuts off all whitespace after a line.
+        file.write("\n") # Then we add a newline character.
+
+    def doSave(self):
+        try:
             textoutput = self.text.get(0.0, END) # Gets all the text in the field
-            file.write(textoutput.rstrip()) # With blank perameters, this cuts off all whitespace after a line.
-            file.write("\n") # Then we add a newline character.
+            self.savefile.write(textoutput.rstrip()) # With blank perameters, this cuts off all whitespace after a line.
+            self.savefile.write("\n") # Then we add a newline character.
+        except:
+            self.doSaveAs()
 
     def doOpen(self):
-            # Returns the opened file
-            file = tkFileDialog.askopenfile(mode='r')
-            fileContents = file.read() # Get all the text from file.
+        # Returns the opened file
+        file = tkFileDialog.askopenfile(mode='r')
+        self.savefile = file
+        fileContents = file.read() # Get all the text from file.
+        # Set current text to file contents
+        self.text.delete(0.0, END)
+        self.text.insert(0.0, fileContents) 
 
-            # Set current text to file contents
-            self.text.delete(0.0, END)
-            self.text.insert(0.0, fileContents) 
-
-    def openAudio(self):
+    def openAudio(self, event):
         fname = tkFileDialog.askopenfile(mode='r')
         self.fpath = os.path.abspath(fname.name)
+        self.nameVar.set(self.fpath)
 
-    def playAudio(self):    
+    def playAudio(self, event):    
         self.p=vlc.MediaPlayer(self.fpath)
         self.p.play()
         self.rate=1
+        self.displayTime()
     
     def stopAudio(self):
         self.p.stop()
@@ -72,6 +86,12 @@ class App:
         stamp=' ('+t+') '
         self.text.insert(END, stamp)
         print(t)
+    def timecheck(self):
+        tmillisec=vlc.libvlc_media_player_get_time(self.p)
+        sec=tmillisec/1000
+        tsec= datetime.timedelta(seconds=sec)
+        t=str(tsec)
+        self.stamp=' ('+t+') '
     
     def statuscheck(self):
         status=vlc.libvlc_media_player_get_state(self.p)
@@ -83,11 +103,33 @@ class App:
             self.timestamps()
         threading.Timer(self.stamprate, self.looping).start()
 
+    def displayTime(self):
+        self.statuscheck()
+        if self.status in ['State.Playing']:
+            self.timecheck()
+            self.clock.config(text=self.stamp)
+        self.clock.after(200, self.displayTime)
+
     def __init__(self):
             # Set up the screen, the title, and the size.
             self.root = Tk()
             self.root.title("Transcription Tools")
             self.root.minsize(width=500,height=800)
+
+            # Set up File Information
+            self.fileFrame = Frame(self.root)
+            self.fileFrame.grid(row=0, column=1, sticky=S)
+            self.fileFrame.pack()
+            Label(self.fileFrame, text="Audio File:").grid(row=0, column=0, sticky=W)
+            self.nameVar = StringVar()
+            self.name = Entry(self.fileFrame, textvariable=self.nameVar)
+            self.name.grid(row=0, column=1, sticky=W)
+            BOpen = Button(self.fileFrame, text="Open Audio...", command=lambda:self.openAudio(None))
+            BOpen.grid(row=0, column=2, sticky=W)
+            #Set up a clock to show the time of the audio file
+            self.clock = Label(self.fileFrame)
+            self.clock.grid(row=0, column=3, sticky=W)
+
 
             # Set up Buttons Frame
             self.bFrame = Frame(self.root)
@@ -95,13 +137,14 @@ class App:
             self.bFrame.pack()
 
             # Set up the audio buttons
+            B0 = Button(self.bFrame, text="Play", command=lambda:self.playAudio(None))
             B1 = Button(self.bFrame, text="Pause", command=lambda:self.pauseAudio(None))
             B2 = Button(self.bFrame, text="Forward", command=lambda:self.forwardAudio(None))
             B3 = Button(self.bFrame, text="Backward", command=lambda:self.backwardAudio(None))
             B4 = Button(self.bFrame, text="Speed Up", command=lambda:self.speedUpAudio(None))
             B5 = Button(self.bFrame, text="Slow Down", command=lambda:self.slowDownAudio(None))
             B6 = Button(self.bFrame, text="Time Stamp", command=lambda:self.timestamps(None))
-            B1.pack(side=LEFT); B2.pack(side=LEFT); B3.pack(side=LEFT); B4.pack(side=LEFT); B5.pack(side=LEFT); B6.pack(side=LEFT);
+            B0.pack(side=LEFT);B1.pack(side=LEFT); B2.pack(side=LEFT); B3.pack(side=LEFT); B4.pack(side=LEFT); B5.pack(side=LEFT); B6.pack(side=LEFT);
 
             # Set up Text Tool Frame
             self.textFrame = Frame(self.root)
@@ -132,14 +175,15 @@ class App:
             filemenu.add_command(label="Open", command=self.doOpen, accelerator="Ctrl+O")
     
             # Try out the saveAsDialog
-            filemenu.add_command(label="Save", command=self.doSaveAs, accelerator="Ctrl+Shift+S")
-            menubar.add_cascade(label="File", menu=filemenu)
+            filemenu.add_command(label="Save", command=self.doSave, accelerator="Ctrl+S")
+            filemenu.add_command(label="Save As", command=self.doSaveAs, accelerator="Ctrl+Shift+S")
+            menubar.add_cascade(label="Text", menu=filemenu)
             self.root.config(menu=menubar)
     
             #Set up the AudioMenu
             AudioMenu = Menu(menubar,tearoff=0)
-            AudioMenu.add_command(label="Select Audio File", command=self.openAudio)
-            AudioMenu.add_command(label="Play", command=self.playAudio)
+            AudioMenu.add_command(label="Select Audio File", command=lambda:self.openAudio(None))
+            AudioMenu.add_command(label="Play", command=lambda:self.playAudio(None))
             AudioMenu.add_command(label="Stop", command=self.stopAudio)
             AudioMenu.add_command(label="Pause", command=lambda:self.pauseAudio(None), accelerator="Ctrl+P")
             AudioMenu.add_command(label="Speed +", command=lambda:self.speedUpAudio(None), accelerator="Ctrl+=")
